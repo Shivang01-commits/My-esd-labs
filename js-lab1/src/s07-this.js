@@ -10,11 +10,19 @@ export class PlannerList {
   constructor(owner) {
     this.owner = owner;
     this.ids = [];
+
+    //This locks in the 'this' in the function now so we can call it bare...no dot required
+    //this.add=this.add.bind(this);
   }
 
-  add(id) {
+  //add(id) {
+  //  this.ids.push(id);
+  //}
+
+  //We can also write arrow function, because it locks the 'this' during creation of object when construction runs
+  add = (id) => {
     this.ids.push(id);
-  }
+  };
 
   describe() {
     return `${this.owner} has ${this.ids.length} course(s) planned`;
