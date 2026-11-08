@@ -6,7 +6,13 @@
 // Nothing else changes the page. Follow sections 07–09 of the lab doc.
 import { useState } from "../src/state.js";
 import { initialState, transition } from "../src/s05-store.js";
-import { cardView, summaryView, statusView, sgpaView, GRADE_POINTS } from "../src/s06-views.js";
+import {
+  cardView,
+  summaryView,
+  statusView,
+  sgpaView,
+  GRADE_POINTS,
+} from "../src/s06-views.js";
 import { fetchCourses } from "../src/s04-api.js";
 import { createLatestOnly, debounce } from "../src/s09-latest.js";
 
@@ -29,10 +35,19 @@ const els = {
 // delay/fail options to every request, so you can see slow, out-of-order and
 // failing responses on purpose.
 // ---------------------------------------------------------------------------
-const NETWORK = { normal: "", slow: "delay=1500", random: "delay=random", failing: "fail=1" };
+const NETWORK = {
+  normal: "",
+  slow: "delay=1500",
+  random: "delay=random",
+  failing: "fail=1",
+};
 let network = "normal";
 const fetchWithNetwork = (url) =>
-  fetch(NETWORK[network] ? `${url}${url.includes("?") ? "&" : "?"}${NETWORK[network]}` : url);
+  fetch(
+    NETWORK[network]
+      ? `${url}${url.includes("?") ? "&" : "?"}${NETWORK[network]}`
+      : url,
+  );
 
 els.network.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-network]");
@@ -57,7 +72,7 @@ function renderDepartments(state) {
       button.textContent = name || "All";
       button.setAttribute("aria-pressed", String(name === state.department));
       return button;
-    })
+    }),
   );
 }
 
@@ -88,13 +103,15 @@ function renderCourses(state) {
       button.disabled = view.disabled;
       item.append(heading, meta, seats, button);
       return item;
-    })
+    }),
   );
 }
 
 function renderPlanner(state) {
   const summary = summaryView(state.planner);
-  els.summary.textContent = summary.overLimit ? `${summary.text} — over the 24-credit limit` : summary.text;
+  els.summary.textContent = summary.overLimit
+    ? `${summary.text} — over the 24-credit limit`
+    : summary.text;
   els.summary.classList.toggle("over", summary.overLimit);
   if (state.planner.length === 0) {
     const empty = document.createElement("li");
@@ -111,7 +128,10 @@ function renderPlanner(state) {
       const select = document.createElement("select");
       select.dataset.id = course.id;
       select.setAttribute("aria-label", `Expected grade for ${course.code}`);
-      select.append(new Option("Grade…", ""), ...Object.keys(GRADE_POINTS).map((g) => new Option(g, g)));
+      select.append(
+        new Option("Grade…", ""),
+        ...Object.keys(GRADE_POINTS).map((g) => new Option(g, g)),
+      );
       select.value = state.grades[course.id] ?? "";
       const remove = document.createElement("button");
       remove.type = "button";
@@ -121,7 +141,7 @@ function renderPlanner(state) {
       remove.textContent = "✕";
       item.append(label, select, remove);
       return item;
-    })
+    }),
   );
 }
 
@@ -134,23 +154,97 @@ function renderSgpa(state) {
 // ---------------------------------------------------------------------------
 // TODO: const [getState, setState] = useState(initialState, render);
 // TODO: const dispatch = (event) => …   (hint: setState with an updater that calls transition)
+const [getState, setState] = useState(initialState, render);
+
+const dispatch = (event) => {
+  setState((currentState) => transition(currentState, event));
+};
 
 // ---------------------------------------------------------------------------
 // Step 2 (sections 07 and 08) — render(): draw the state.
 // First make it call all five region functions every time. Then (section 08)
 // make it redraw a region only when the part of the state it shows has changed.
 // ---------------------------------------------------------------------------
-function render() {
-  // TODO
-}
+let previousState = null;
 
+function render() {
+  const state = getState();
+
+  if (
+    previousState === null ||
+    state.departments !== previousState.departments ||
+    state.department !== previousState.department
+  ) {
+    renderDepartments(state);
+  }
+
+  if (
+    previousState === null ||
+    state.status !== previousState.status ||
+    state.error !== previousState.error ||
+    state.courses !== previousState.courses
+  ) {
+    renderStatus(state);
+  }
+
+  if (
+    previousState === null ||
+    state.courses !== previousState.courses ||
+    state.planner !== previousState.planner
+  ) {
+    renderCourses(state);
+  }
+
+  if (
+    previousState === null ||
+    state.planner !== previousState.planner ||
+    state.grades !== previousState.grades
+  ) {
+    renderPlanner(state);
+  }
+
+  if (
+    previousState === null ||
+    state.planner !== previousState.planner ||
+    state.grades !== previousState.grades
+  ) {
+    renderSgpa(state);
+  }
+
+  previousState = state;
+}
 // ---------------------------------------------------------------------------
 // Step 3 (sections 07 and 09) — load(): fetch the courses for the current filters.
 // LOAD_START before; LOAD_OK or LOAD_FAIL after. Use fetchCourses(filters, fetchWithNetwork).
 // Section 09: keep only the LATEST response, with createLatestOnly().
 // ---------------------------------------------------------------------------
+const latestLoad = createLatestOnly();
+
 async function load() {
-  // TODO
+  const state = getState();
+
+  const filters = {
+    department: state.department,
+    query: state.query,
+  };
+
+  dispatch({ type: "LOAD_START" });
+
+  try {
+    const result = await latestLoad(fetchCourses(filters, fetchWithNetwork));
+
+    if (result.stale) return;
+
+    dispatch({
+      type: "LOAD_OK",
+      courses: result.value,
+    });
+  } catch (error) {
+    dispatch({
+      type: "LOAD_FAIL",
+      message: error.message,
+    });
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -166,7 +260,77 @@ async function load() {
 // TODO: the form's "submit"      → preventDefault (Enter in a field must not reload the page)
 // TODO: "Try again" button       → load()
 
+els.search.addEventListener("input", () => {
+  dispatch({
+    type: "SET_QUERY",
+    query: els.search.value,
+  });
+
+  load();
+});
+els.departments.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-department]");
+
+  if (!button) return;
+
+  dispatch({
+    type: "SET_DEPARTMENT",
+    department: button.dataset.department,
+  });
+
+  load();
+});
+els.courses.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-id]");
+
+  if (!button) return;
+
+  const id = button.dataset.id;
+  const inPlanner = button.dataset.inPlanner === "true";
+
+  if (inPlanner) {
+    dispatch({ type: "REMOVE", id });
+  } else {
+    const course = getState().courses.find(
+      (course) => String(course.id) === id,
+    );
+
+    if (course) {
+      dispatch({ type: "ADD", course });
+    }
+  }
+});
+els.planned.addEventListener("change", (event) => {
+  const select = event.target.closest("select[data-id]");
+
+  if (!select) return;
+
+  dispatch({
+    type: "SET_GRADE",
+    id: select.dataset.id,
+    grade: select.value,
+  });
+});
+els.planned.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-remove]");
+
+  if (!button) return;
+
+  dispatch({
+    type: "REMOVE",
+    id: button.dataset.remove,
+  });
+});
+els.sgpaForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+});
+els.retry.addEventListener("click", () => {
+  load();
+});
+
 // ---------------------------------------------------------------------------
 // Start: draw once, then load.
 // ---------------------------------------------------------------------------
 // TODO: render(); load();
+render();
+load();
