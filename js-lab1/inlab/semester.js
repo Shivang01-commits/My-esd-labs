@@ -17,9 +17,44 @@
 // Stretch: moveCourse(plan, from, to, courseId) — out of one semester, into another.
 
 export function addToSemester(plan, semester, courseId) {
-  throw new Error("TODO");
+  const currentCourses = plan.semesters[semester] ?? [];
+
+  if (currentCourses.includes(courseId)) {
+    return plan;
+  }
+
+  return {
+    ...plan,
+    semesters: {
+      ...plan.semesters,
+      [semester]: [...currentCourses, courseId],
+    },
+  };
 }
 
 export function moveCourse(plan, from, to, courseId) {
-  throw new Error("TODO");
+  const sourceCourses = plan.semesters[from];
+
+  if (!sourceCourses || !sourceCourses.includes(courseId)) {
+    return plan;
+  }
+
+  if (from === to) {
+    return plan;
+  }
+
+  const destinationCourses = plan.semesters[to] ?? [];
+
+  if (destinationCourses.includes(courseId)) {
+    return plan;
+  }
+
+  return {
+    ...plan,
+    semesters: {
+      ...plan.semesters,
+      [from]: sourceCourses.filter((id) => id !== courseId),
+      [to]: [...destinationCourses, courseId],
+    },
+  };
 }
