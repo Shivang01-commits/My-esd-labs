@@ -14,10 +14,13 @@ export default function App() {
   // Section 09: render <Stats matrix={…} /> NEXT TO the matrix, not inside it.
   // Section 11: load /matrix.json once, in a useEffect, and put it in the state.
   const [matrix, setMatrix] = useState(START);
+
+  const onIncrement = (row, col) =>
+    setMatrix((prev) => incrementAt(prev, row, col));
   return (
     <main className="app">
       <Header />
-      <Matrix matrix={matrix}></Matrix>
+      <Matrix matrix={matrix} onIncrement={onIncrement}></Matrix>
     </main>
   );
 }
