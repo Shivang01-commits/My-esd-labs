@@ -152,8 +152,6 @@ function renderSgpa(state) {
 // ---------------------------------------------------------------------------
 // Step 1 (section 07) — the state, and the ONLY way to change it.
 // ---------------------------------------------------------------------------
-// TODO: const [getState, setState] = useState(initialState, render);
-// TODO: const dispatch = (event) => …   (hint: setState with an updater that calls transition)
 const [getState, setState] = useState(initialState, render);
 
 const dispatch = (event) => {
@@ -195,11 +193,7 @@ function render() {
     renderCourses(state);
   }
 
-  if (
-    previousState === null ||
-    state.planner !== previousState.planner ||
-    state.grades !== previousState.grades
-  ) {
+  if (previousState === null || state.planner !== previousState.planner) {
     renderPlanner(state);
   }
 
@@ -213,6 +207,7 @@ function render() {
 
   previousState = state;
 }
+
 // ---------------------------------------------------------------------------
 // Step 3 (sections 07 and 09) — load(): fetch the courses for the current filters.
 // LOAD_START before; LOAD_OK or LOAD_FAIL after. Use fetchCourses(filters, fetchWithNetwork).
@@ -225,7 +220,7 @@ async function load() {
 
   const filters = {
     department: state.department,
-    query: state.query,
+    q: state.query,
   };
 
   dispatch({ type: "LOAD_START" });
@@ -252,13 +247,7 @@ async function load() {
 // Use ONE listener per region and find the button/select that was hit
 // (event delegation, JS Lab 1 section 13).
 // ---------------------------------------------------------------------------
-// TODO: search box "input"      → SET_QUERY, then load()
-// TODO: department buttons       → SET_DEPARTMENT, then load()
-// TODO: course card buttons      → ADD (with the course object) or REMOVE (with the id)
-// TODO: grade selects "change"   → SET_GRADE
-// TODO: planner ✕ buttons        → REMOVE
-// TODO: the form's "submit"      → preventDefault (Enter in a field must not reload the page)
-// TODO: "Try again" button       → load()
+const debouncedLoad = debounce(load, 300);
 
 els.search.addEventListener("input", () => {
   dispatch({
@@ -266,11 +255,11 @@ els.search.addEventListener("input", () => {
     query: els.search.value,
   });
 
-  load();
+  debouncedLoad();
 });
+
 els.departments.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-department]");
-
   if (!button) return;
 
   dispatch({
@@ -280,50 +269,66 @@ els.departments.addEventListener("click", (event) => {
 
   load();
 });
+
 els.courses.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-id]");
-
   if (!button) return;
 
   const id = button.dataset.id;
-  const inPlanner = button.dataset.inPlanner === "true";
+  const course = getState().courses.find((item) => String(item.id) === id);
 
-  if (inPlanner) {
-    dispatch({ type: "REMOVE", id });
+  if (!course) return;
+
+  if (button.dataset.inPlanner === "true") {
+    dispatch({
+      type: "REMOVE",
+      id: course.id,
+    });
   } else {
-    const course = getState().courses.find(
-      (course) => String(course.id) === id,
-    );
-
-    if (course) {
-      dispatch({ type: "ADD", course });
-    }
+    dispatch({
+      type: "ADD",
+      course,
+    });
   }
 });
+
 els.planned.addEventListener("change", (event) => {
   const select = event.target.closest("select[data-id]");
-
   if (!select) return;
+
+  const course = getState().planner.find(
+    (item) => String(item.id) === select.dataset.id,
+  );
+
+  if (!course) return;
 
   dispatch({
     type: "SET_GRADE",
-    id: select.dataset.id,
+    id: course.id,
     grade: select.value,
   });
 });
+
 els.planned.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-remove]");
-
   if (!button) return;
+
+  const course = getState().planner.find(
+    (item) => String(item.id) === button.dataset.remove,
+  );
+
+  if (!course) return;
 
   dispatch({
     type: "REMOVE",
-    id: button.dataset.remove,
+    id: course.id,
   });
 });
+
 els.sgpaForm.addEventListener("submit", (event) => {
   event.preventDefault();
 });
+
 els.retry.addEventListener("click", () => {
   load();
 });
@@ -331,6 +336,5 @@ els.retry.addEventListener("click", () => {
 // ---------------------------------------------------------------------------
 // Start: draw once, then load.
 // ---------------------------------------------------------------------------
-// TODO: render(); load();
 render();
 load();
