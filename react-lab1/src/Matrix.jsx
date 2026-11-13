@@ -14,6 +14,7 @@
 import Cell from "./Cell.jsx";
 
 export default function Matrix({ matrix, onIncrement }) {
+  console.log("Matrix Rendering");
   return (
     <table className="matrix">
       <tbody>

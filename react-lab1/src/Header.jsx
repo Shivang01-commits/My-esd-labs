@@ -5,6 +5,7 @@
 //   a <p className="hint"> that says   Click a cell to add one.
 // A component returns one thing, so wrap the two in a fragment: <> … </>.
 export default function Header() {
+  console.log("Header Rendering");
   return (
     <>
       <h1>Number matrix</h1>

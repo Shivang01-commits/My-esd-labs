@@ -9,6 +9,7 @@
 //   row 0, col 1, value 5   →   aria-label "Row 1, column 2: 5"
 // Clicking it calls onClick. Pass the function — don't call it.
 export default function Cell({ row, col, value, onClick }) {
+  console.log("Cell rendering");
   return (
     <button
       className="cell"

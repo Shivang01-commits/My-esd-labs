@@ -15,6 +15,7 @@ import { useState } from "react";
 import { stats } from "./matrix.js";
 
 export default function Stats({ matrix }) {
+  console.log("Stats Rendering");
   const { sum, average, max, nonZero } = stats(matrix);
   return (
     <section className="stats">
