@@ -16,6 +16,14 @@ export default function App() {
   console.log("App rendering");
   const [matrix, setMatrix] = useState(START);
 
+  useEffect(() => {
+    async function load() {
+      const res = await fetch("/matrix.json");
+      setMatrix(await res.json());
+    }
+    load();
+  }, []);
+
   const onIncrement = (row, col) =>
     setMatrix((prev) => incrementAt(prev, row, col));
 
