@@ -26,9 +26,33 @@ export function incrementAt(matrix, row, col) {
 //   stats([[1, 0], [3, 4]])  →  { sum: 8, average: 2, max: 4, nonZero: 3 }
 // average = sum ÷ the number of cells. An empty matrix, [], gives 0 for all four.
 export function stats(matrix) {
-  throw new Error("TODO");
+  const len = matrix.flat().length;
+  const sum =
+    len === 0
+      ? 0
+      : matrix
+          .flat()
+          .reduce((accumulator, current) => accumulator + current, 0);
+  const avg = len === 0 ? 0 : Number((sum / len).toFixed(2));
+  const maximum =
+    len === 0
+      ? 0
+      : matrix
+          .flat()
+          .reduce(
+            (maximum, current) => Math.max(maximum, current),
+            Number.MIN_SAFE_INTEGER,
+          );
+  const nonZero = matrix
+    .flat()
+    .reduce((acc, current) => (current > 0 ? acc + 1 : acc), 0);
+  return {
+    sum,
+    average: avg,
+    max: maximum,
+    nonZero,
+  };
 }
-
 // Section 12 (stretch) — the same shape, every cell 0.
 //   zeros([[1, 2], [3, 4]])  →  [[0, 0], [0, 0]]
 export function zeros(matrix) {
