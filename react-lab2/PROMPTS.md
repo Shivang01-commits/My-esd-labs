@@ -4,7 +4,7 @@ Part of what you submit. It shows _how_ you used AI: did you hand it the contrac
 rules, or type "make it work"? Fill it in **as you go**, not from memory at the end.
 
 - Name and roll number:Shivang Shrivastava MT2026094
-- AI tool and plan (e.g. ChatGPT free, Gemini, Claude free, Copilot):
+- AI tool and plan (e.g. ChatGPT free, Gemini, Claude free, Copilot): Chatgpt free
 
 **Log every prompt you send, in order — including the ones that didn't help.** Paste each
 prompt in full. One exception: if you pasted CONTRACT.md's prompt 1 unchanged, write
@@ -17,85 +17,26 @@ prompt in full. One exception: if you pasted CONTRACT.md's prompt 1 unchanged, w
 **Sent:**
 
 ```text
-You are helping me build one small feature in an existing React 19 + Vite app, in JavaScript.
-
-## The feature: a Courses page — list + add
-
-1. The page has a heading "Courses".
-2. When the page first appears, load the course list once: GET /api/courses.
-   - While waiting, show: Loading courses…
-   - If it fails, show: Couldn't load courses: <the error's message>
-   - If the list is empty, show: No courses yet.
-   - Otherwise a <ul> with one <li> per course, showing two lines like these:
-       CS101 · Programming Fundamentals
-       4 credits · Computer Science · 34 seats left
-     (code · title, then credits · department · seats: "Full" when seatsLeft is 0,
-     "1 seat left" when it is 1)
-3. Below the list, a form headed "Add a course". One <label> per field, with exactly these
-   texts: "Code", "Title", "Department", "Credits", "Capacity", "Description".
-   Credits and Capacity are number inputs; Description is a textarea and may be left empty.
-   A submit button "Add course".
-4. On submit, POST /api/courses with a CourseRequest. credits and capacity must be sent as
-   numbers (input values are strings). description is null when left empty. The button is
-   disabled until the server answers. No validation in the browser: send what was typed,
-   and let the server decide.
-5. On success (201): add the course from the response body to the list, keeping the list
-   sorted by code. Do NOT reload the whole list. Clear the form.
-6. On failure: keep what was typed. Show the error's message above the button. For a 400,
-   also show each entry of fieldErrors directly under its own input.
-
-## The API (from the project's openapi.yaml)
-
-GET  /api/courses → 200: an array of Course, sorted by code
-POST /api/courses, body: CourseRequest (admin only) →
-     201: the created Course
-     400: ApiError, message "Validation failed", fieldErrors { field name: reason }
-     401 / 403: ApiError (not logged in / not an admin)
-     409: ApiError, message "Course code already exists"
-
-Course        { id, code, title, description (string or null), department, credits, capacity, seatsLeft }
-CourseRequest { code, title, department, credits, capacity, description (optional, may be null) }
-              code: 2–4 uppercase letters then 3 digits, e.g. "CS501"
-              credits: whole number 1–6; capacity: whole number 1–500
-ApiError      { timestamp, status, error, message, path, fieldErrors (object or null) }
-
-## The API client — already written: use it, don't change it
-
-src/api/client.js exports:
-  apiFetch(path, { method = "GET", body } = {})  → resolves with the parsed JSON body
-  ApiError  — apiFetch throws it for any non-2xx answer: error.status, error.message, error.fieldErrors
-apiFetch handles the base URL, JSON, and the admin login token. Never call fetch directly;
-never handle tokens. For example:
-  const courses = await apiFetch("/api/courses");
-  const created = await apiFetch("/api/courses", { method: "POST", body: courseRequest });
-
-## Where it goes
-
-All files go in src/courses/. The page component is CoursesPage, a named export from
-src/courses/CoursesPage.jsx (src/App.jsx already renders it). Import the client as
-"../api/client.js". Don't write App.jsx, main.jsx or any CSS: they exist.
-
-## Rules
-
-Use only useState and useEffect. Do not use useMemo, useCallback, useReducer, useRef, or
-context. No TypeScript. Plain fetch, no data-fetching library. One View component that only
-renders; put fetch and logic in a separate hook or module.
-- "Plain fetch" here means apiFetch from src/api/client.js, which wraps fetch.
-- No new packages: no axios, React Query, SWR, form or UI libraries. Plain JSX; a few
-  className attributes are fine; no CSS file.
-- Function components, named exports, .js / .jsx files.
-
-Reply with each file in full, its path on the first line. Keep explanations short.
-
+CONTRACT.md prompt 1, unchanged
 ```
 
 **What came back:** (which files; which hooks it used; anything from the "not yet" list;
 anything it did that the contract didn't ask for)
+-> 3 files came, AddcourseForm.jsx is missing. Nothing is used from not yet list.
 
-**Did it run?** (`npm run dev`: list loads? add works? 409 shown? fieldErrors shown?
-`npm test`: ** passed / ** failed)
+**Did it run?** (`npm run dev`: list loads? add works? 409 shown? fieldErrors shown? list loads, add works, 409 is shown, fielderrors are also shown
+`npm test`: 31 passed / 31 failed)
 
 **What I did with it:**
+
+1. Ran `npm run dev` — page works end-to-end (list loads, add works, 409 shown, fieldErrors shown).
+2. Checked Network tab — 2 GETs on load (StrictMode), 1 POST per add (no unnecessary reload).
+3. Ran `npm test` — 31 passed / 31 failed.
+4. Wrote AUDIT.md
+5. Gave Prompt 2 (the fix prompt carrying my decisions) to the AI.
+6. AI returned 4 files. Ran `npm test` — 54 passed / 8 failed. All 8 failures: `expected 'success' to be 'ready'` (one-word mismatch in `useCourses.js`).
+7. changed `setStatus("success")` to `setStatus("ready")`."
+8. Ran `npm test` — **62 passed / 0 failed**.
 
 ---
 
@@ -106,12 +47,41 @@ anything it did that the contract didn't ask for)
 **Sent:**
 
 ```text
+I audited the code you gave me. Change it exactly like this, and nothing else:
 
+1. Split CoursesView.jsx into TWO components:
+   - CoursesView.jsx: shows ONLY the list (or loading/error/empty state). Props: { courses, status, error }. No form. No inputs. No button. No handleChange. No handleSubmit.
+   - AddCourseForm.jsx (NEW file): the form. Owns its own state internally (one useState for the form object, one for submitting, one for formError, one for fieldErrors). Takes ONE prop: { onAdd }. On submit, calls await onAdd(courseRequest). Catches errors itself. Clears form on success. Shows fieldErrors under each input. Shows formError above the button with role="alert". Inputs with field errors get aria-invalid and aria-describedby.
+
+2. Fix useCourses.js:
+   - Remove ALL form state (form, submitting, submitError, fieldErrors, handleChange, handleSubmit).
+   - Replace useState(true) for loading + useState("") for loadError with: useState("loading") for status + useState(null) for error.
+   - Add cleanup to useEffect: let ignore = false before the fetch; return () => { ignore = true; } after.
+   - Export an addCourse(courseRequest) function that does the POST via apiFetch, inserts the 201 response into the array sorted by code, and returns the created course. It must THROW on failure (do not catch inside addCourse).
+   - Return exactly: { courses, status, error, addCourse }.
+
+3. Fix CoursesPage.jsx:
+   - Call useCourses() and destructure { courses, status, error, addCourse }.
+   - Render: <h1>Courses</h1>, then <CoursesView courses={courses} status={status} error={error} />, then <AddCourseForm onAdd={addCourse} />.
+   - Do NOT spread everything into one component.
+
+4. The form sends: credits as Number(form.credits), capacity as Number(form.capacity), description as null when empty. No browser validation (no required attributes).
+
+The files must end up with exactly this shape:
+- src/courses/useCourses.js: a hook. useState + useEffect only. Returns { courses, status, error, addCourse }. No JSX. No form state.
+- src/courses/CoursesView.jsx: a component that only renders. Props: { courses, status, error }. No fetch. No hooks. No form.
+- src/courses/AddCourseForm.jsx: a component. Props: { onAdd }. Owns form state via useState. Calls onAdd on submit. Catches errors. No fetch. No apiFetch.
+- src/courses/CoursesPage.jsx: wiring. Calls useCourses. Passes data to CoursesView. Passes addCourse to AddCourseForm as onAdd.
+
+Same rules as before: only useState and useEffect; no useMemo, useCallback, useReducer, useRef or context; JavaScript; apiFetch only. Named exports. Reply with the changed files in full, path on the first line.
 ```
 
 **What came back:**
+4 files, correct structure. All the splits, moves, and adds were done as specified. One bug: setStatus("success") instead of setStatus("ready") in useCourses.js. Result: 54 passed / 8 failed (all 8 the same one-word mismatch).
 
 **What I kept, and what I rejected:**
+Kept: All 4 files, the entire structure.
+Rejected / fixed: setStatus("success") → setStatus("ready"). One word. "changed setStatus("success") to setStatus("ready") in useCourses.js." After that: 62 passed / 0 failed.
 
 ---
 
@@ -120,5 +90,11 @@ anything it did that the contract didn't ask for)
 ## Afterwards
 
 - How many prompts did the whole feature take?
+- Ans: 2
 - Which of your prompts would you write differently now, and how?
+- ans:Prompt 1. I would have added: "The status string values are exactly: "loading", "ready", "error". Not "success", not "loaded", not "done". The tests check for these exact strings." And: "Create FOUR files. AddCourseForm.jsx is a separate component — do not put the form inside CoursesView." The contract said "one View component that only renders" but the AI interpreted "one View" as "one component that shows everything." Being explicit about the file count and the exact string values would have saved Prompt 2.
+
 - One thing the rules in prompt 1 prevented (or failed to prevent):
+- ans: Prevented: the "not yet" list — no useMemo, useCallback, useRef, useReducer, context, or data-fetching library appeared.
+
+Failed to prevent: the wrong file split (3 files instead of 4, form crammed into the view) and the wrong status string ("success" instead of "ready"). The rules constrained which hooks to use but not how to structure the files or what exact string values to use. Those required reading the test files, which the prompt didn't reference.

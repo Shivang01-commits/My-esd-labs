@@ -113,22 +113,29 @@ For each "not yet" item you removed — one at a time:
 
 | Removed | `npm test` after | The app after (loads / adds / shows errors) |
 | ------- | ---------------- | ------------------------------------------- |
-|         |                  |                                             |
+| (none)  | —                | —                                           |
 
-If the AI used none, say so here, and say which rule in prompt 1 you think prevented it.
+The AI used none of the Part B items.
+
+**Which rule in prompt 1 prevented it:**
+
+The explicit constraint: "Use only useState and useEffect. Do not use useMemo, useCallback, useReducer, useRef, or context. No TypeScript. Plain fetch, no data-fetching library."
 
 ## 6. Before / after
 
-|                              | Before (the AI's first version) | After (yours) |
-| ---------------------------- | ------------------------------- | ------------- |
-| Files and components         |                                 |               |
-| `useState` calls (and where) |                                 |               |
-| `useEffect` calls            |                                 |               |
-| "Not yet" items              |                                 |               |
-| Requests: on load / per add  |                                 |               |
-| `npm test`                   |                                 |               |
+## 6. Before / after
+
+|                              | Before (the AI's first version)                                                                                            | After (yours)                                                                                                                            |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Files and components         | 3 files: CoursesPage.jsx, CoursesView.jsx, useCourses.js. AddCourseForm.jsx has still the TODO placeholder.                | 4 files: CoursesPage.jsx, CoursesView.jsx , AddCourseForm.jsx, useCourses.js                                                             |
+| `useState` calls (and where) | 7 calls, **all** in `useCourses.js`: `courses`, `loading`, `loadError`, `form`, `submitting`, `submitError`, `fieldErrors` | 7 calls, splited: `useCourses.js` — `courses`, `status`, `error`. `AddCourseForm.jsx` — `form`, `submitting`, `formError`, `fieldErrors` |
+| `useEffect` calls            | 1 in `useCourses.js` (fetch on mount, no cleanup)                                                                          | 1 in `useCourses.js` added cleanup                                                                                                       |
+| "Not yet" items              | None                                                                                                                       | None                                                                                                                                     |
+| Requests: on load / per add  | 2 GET (StrictMode) / 1 POST                                                                                                | 2 GET (StrictMode) / 1 POST (unchanged)                                                                                                  |
+| `npm test`                   | 31 passed / 31 failed                                                                                                      | 62 passed / 0 failed (all 9 files passing)                                                                                               |
 
 ## 7. Two sentences
 
-- One thing the AI got right that you might not have thought of:
-- One thing you will never accept from an AI without checking again:
+- One thing the AI got right that you might have gotten wrong: It wrote setCourses(prev => [...prev, created].sort(...)) — a new array every time, old reference preserved. I might have written prev.push(created); prev.sort(...) which mutates the existing array. React would see the same reference, skip the re-render, and the new course would never appear on screen.
+
+- One thing you will never accept from an AI without checking again: The exact string values and file structure. The AI wrote setStatus("success") when the spec says "ready" — a one-word difference that broke 8 tests silently.
