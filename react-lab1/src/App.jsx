@@ -15,6 +15,7 @@ export default function App() {
   // Section 11: load /matrix.json once, in a useEffect, and put it in the state.
   console.log("App rendering");
   const [matrix, setMatrix] = useState(START);
+  const [step, setStep] = useState(1);
 
   useEffect(() => {
     async function load() {
@@ -25,13 +26,24 @@ export default function App() {
   }, []);
 
   const onIncrement = (row, col) =>
-    setMatrix((prev) => incrementAt(prev, row, col));
+    setMatrix((prev) => incrementAt(prev, row, col, step));
+  const onReset = () => setMatrix((prev) => zeros(prev));
 
   return (
     <main className="app">
       <Header />
       <Matrix matrix={matrix} onIncrement={onIncrement}></Matrix>
       <Stats matrix={matrix}></Stats>
+      <label>
+        Step{" "}
+        <input
+          type="number"
+          min="1"
+          value={step}
+          onChange={(event) => setStep(Number(event.target.value))}
+        />
+      </label>
+      <button onClick={onReset}>Reset</button>
     </main>
   );
 }

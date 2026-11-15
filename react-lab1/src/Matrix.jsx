@@ -12,9 +12,10 @@
 // Lists need a key on the element you return from map — section 06 says which.
 // Section 08: each Cell's onClick calls onIncrement with THAT cell's row and column.
 import Cell from "./Cell.jsx";
-
+import { stats } from "./matrix.js";
 export default function Matrix({ matrix, onIncrement }) {
   console.log("Matrix Rendering");
+  const max = stats(matrix).max;
   return (
     <table className="matrix">
       <tbody>
@@ -26,6 +27,7 @@ export default function Matrix({ matrix, onIncrement }) {
                   row={row}
                   col={column}
                   value={value}
+                  isMax={max > 0 && value === max}
                   onClick={() => onIncrement(row, column)}
                 ></Cell>
               </td>
