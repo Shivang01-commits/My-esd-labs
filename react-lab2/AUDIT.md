@@ -10,9 +10,14 @@ Point at code as `file:line`, e.g. `CoursesPage.jsx:14`.
 
 ## 0. What came back
 
-| File the AI gave you | What's in it (components, hooks) | Lines |
-| -------------------- | -------------------------------- | ----- |
-|                      |                                  |       |
+| File the AI gave you            | What's in it (components, hooks)                                                                                                                                                                                                                                     | Lines |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| `src/courses/useCourses.js`     | 1 custom hook (`useCourses`). 7 `useState` calls (`courses`, `loading`, `loadError`, `form`, `submitting`, `submitError`, `fieldErrors`). 1 `useEffect` (fetch on mount, no cleanup). 2 functions (`handleChange`, `handleSubmit`). 2 `apiFetch` calls (GET + POST). | ~75   |
+| `src/courses/CoursesView.jsx`   | 1 component (`CoursesView`). 9 props. Contains the list (`.map` with `key={course.id}`) **and** the entire form (6 inputs, textarea, button, `renderFieldError` helper, error display). No hooks. No `apiFetch`.                                                     | ~100  |
+| `src/courses/CoursesPage.jsx`   | 1 component (`CoursesPage`). Calls `useCourses()`, spreads everything into `CoursesView` via `{...coursesData}`.                                                                                                                                                     | ~7    |
+| `src/courses/AddCourseForm.jsx` | **Not created.** Still the TODO placeholder (`throw new Error("TODO")`).                                                                                                                                                                                             | 0     |
+
+**Total: 3 files, ~182 lines. Missing: `AddCourseForm.jsx` as a real component.**
 
 - Does it run? List loads / valid add appears in order / duplicate code shows the 409
   message / bad input shows fieldErrors under the inputs:
@@ -120,8 +125,6 @@ The AI used none of the Part B items.
 **Which rule in prompt 1 prevented it:**
 
 The explicit constraint: "Use only useState and useEffect. Do not use useMemo, useCallback, useReducer, useRef, or context. No TypeScript. Plain fetch, no data-fetching library."
-
-## 6. Before / after
 
 ## 6. Before / after
 
