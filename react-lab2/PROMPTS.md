@@ -43,6 +43,7 @@ anything it did that the contract didn't ask for)
 ## Prompt 2 —
 
 **Why I sent it:** (for a fix prompt: which decision in AUDIT.md it carries out)
+Carries out all decisions from AUDIT.md : the split (CoursesView → list only, new AddCourseForm file), the move (form state from hook → form component), the fix (loading + loadError → status + error, add cleanup), and the add (onAdd callback pattern, aria attributes, role="alert").
 
 **Sent:**
 
