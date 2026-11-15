@@ -27,12 +27,19 @@ export default function App() {
 
   const onIncrement = (row, col) =>
     setMatrix((prev) => incrementAt(prev, row, col, step));
+  const onDecrement = (row, col) =>
+    setMatrix((prev) => decrementAt(prev, row, col));
+
   const onReset = () => setMatrix((prev) => zeros(prev));
 
   return (
     <main className="app">
       <Header />
-      <Matrix matrix={matrix} onIncrement={onIncrement}></Matrix>
+      <Matrix
+        matrix={matrix}
+        onIncrement={onIncrement}
+        onDecrement={onDecrement}
+      ></Matrix>
       <Stats matrix={matrix}></Stats>
       <label>
         Step{" "}

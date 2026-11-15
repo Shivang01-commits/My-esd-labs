@@ -13,7 +13,7 @@
 // Section 08: each Cell's onClick calls onIncrement with THAT cell's row and column.
 import Cell from "./Cell.jsx";
 import { stats } from "./matrix.js";
-export default function Matrix({ matrix, onIncrement }) {
+export default function Matrix({ matrix, onIncrement, onDecrement }) {
   console.log("Matrix Rendering");
   const max = stats(matrix).max;
   return (
@@ -29,9 +29,13 @@ export default function Matrix({ matrix, onIncrement }) {
                   value={value}
                   isMax={max > 0 && value === max}
                   onClick={() => onIncrement(row, column)}
+                  onDecrement={() => onDecrement(row, column)}
                 ></Cell>
               </td>
             ))}
+            <td className="total" aria-label={`Row ${row + 1} total`}>
+              {values.reduce((sum, n) => sum + n, 0)}
+            </td>
           </tr>
         ))}
       </tbody>
